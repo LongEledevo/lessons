@@ -3,6 +3,7 @@ const lessonController = require('../controller/lessonController')
 const Routes = (app) => {
     app.route('/admin/lessons/create').post(lessonController.addLesson)
     app.route('/admin/lessons').get(lessonController.Getlesson)
+    app.route('/admin/lessons/:id').put(lessonController.updateLesson)
         
     app.route('/admin/topics')
         .get(lessonController.getTopic)
