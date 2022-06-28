@@ -19,7 +19,7 @@ exports.Getlesson = async (req,res) =>{
             return 0.5 - Math.random();
         })
         console.log(SortTopic)
-        res.send({ listItem: listItem, totalPage: totalPage,  SortTopic:SortTopic})
+        res.send({ listItem: listItem,})
     } catch (error) {
         res.send(error)
     }
@@ -29,8 +29,9 @@ exports.Getlesson = async (req,res) =>{
 exports.addLesson = async (req, res) => {
     try {
        const {title,content,description,topic} = req.body
+       const createLessons = await lesson.create({title:title, content:content , description: description , topic:topic})
        for(let i = 0 ; i <= topic.length ; i++){
-         const createLessons = await lesson.create({title:title, content:content , description: description , topic:topic[i]})
+         
           await Topic.findByIdAndUpdate(topic[i],{lesson:createLessons._id},{new:true},(err,data)=>{
             if(err) res.send(err)
             res.json(data)
@@ -41,34 +42,84 @@ exports.addLesson = async (req, res) => {
     }
 }
 
-// exports.updateLesson = async (req,res) => {
-//     try{
-//         const id = req.params.id
-//         const {title,content,description,topic} = req.body
-//         for(let i = 0 ; i <= topic.length ; i++){
-//              lesson.findByIdAndUpdate(
-//                 id,
-//                 {title:title,content:content,description:description,topic:topic[i]},
-//                 (err,data)=>{
-//                     const NumberTopic = data.topic.length
-//                     if(err) res.send(err)
-//                     for(let j = 0 ; j <= NumberTopic ; j++){
-//                         Topic.findById(NumberTopic[j],(err,data)=>{
-//                             if(err) res.send(err)
-//                             data.lesson.indexOf()
-//                         })
-//                     }
-//                 })
-//         }
-//     }
-//     catch(err){
-//         res.send({ error: error.message })
-//     }
-// }
+exports.updateLesson = async (req,res) => {
+    try{
+        const id = req.params.id
+        const {title,content,description,topic} = req.body
+        const UpdateLesson = await lesson.findByIdAndUpdate(id,{title:title,content:content,description:description,topic:topic})
+        const filteredArrayDelete = [] 
+        await UpdateLesson.topic.filter((value)=>{
+            if(!(topic.includes(value))){
+                filteredArrayDelete.push(value)
+            }
+        })
+        const filtered = [] 
+        await UpdateLesson.topic.filter((value)=>{
+            if((topic.includes(value))){
+                filtered.push(value)
+            }
+        })
+        const ArrayNew = [] 
+        topic.filter((value)=>{
+            if(!(filtered.includes(value))){
+                ArrayNew.push(value)
+            }
+        })
+        if((filteredArrayDelete.length = 0) || (ArrayNew.length = 0)){
+            res.send("update thành công")
+        }
+        if(filtered.length = 0){
+             for(let i = 0;i<filteredArrayDelete.length;i++){
+              const deleteTopic = await  Topic.findById(filteredArrayDelete[i])
+              const findLessons = await deleteTopic.lesson.indexOf(UpdateLesson._id)
+              await deleteTopic.lesson.splice(findLessons,1)
+              await deleteTopic.save()
+            }
+             for(let i = 0;i<ArrayNew.length;i++){
+              const findTopic = await  Topic.findById(ArrayNew[i])
+              const addLessons = await findTopic.lesson.push([ArrayNewi])
+              await findTopic.save()
+            }
+            res.send("update thành công")
+        }
+        if((filtered.length = 0) && (ArrayNew.length > 0)){
+            for(let i = 0;i<ArrayNew.length;i++){
+                const findTopic = await  Topic.findById(ArrayNew[i])
+                await findTopic.lesson.push(ArrayNew[i])
+                await findTopic.save()
+              }
+              res.send("update thành công")
+        }
+       
+    }
+    catch(err){
+        res.send({ error: error.message })
+    }
+}
+
+exports.deleteLessons = async (req,res) =>{
+    try{
+        const DeleteTopic = await lesson.findByIdAndDelete(id)
+        const ArrLessons = DeleteTopic.topic
+        for(let i =0 ; i < ArrLessons.length ; i++){
+            const findLessons = await Topic.findById(ArrLessons[i])
+            const index = await findLessons.lesson.indexOf(id)
+            await findLessons.splice(index,1)
+            findLessons.sava()
+        }
+        res.send("Thafnh cong")
+    }
+    catch(err){
+        res.send({ error: error.message })
+    }
+}
 exports.getTopic = (req,res) => {
     Topic.find({},{_v:0},(err,data)=>{
         if(err) res.send(err)
         res.json({'res':data})
+    }).populate({
+        path:"lesson",
+        select:"Lesson"
     })
 }
 exports.addTopic = (req,res) =>{
@@ -89,11 +140,22 @@ exports.editTopic = (req,res) =>{
     })
 
 }
-exports.deleteTopic = (req,res) =>{
+exports.deleteTopic =  async (req,res) =>{
     const id = req.params.id
-    Topic.findByIdAndDelete(id,(err,data)=>{
-        if(err) res.send(err)
-        res.json(data)
-    })
+    try{
+        const DeleteTopic = await Topic.findByIdAndDelete(id)
+        const ArrLessons = DeleteTopic.lesson
+        for(let i =0 ; i < ArrLessons.length ; i++){
+            const findLessons = await lesson.findById(ArrLessons[i])
+            const index = await findLessons.topic.indexOf(id)
+            await findLessons.splice(index,1)
+            findLessons.sava()
+        }
+        res.send("Thafnh cong")
+    }
+    catch(err){
+        res.send({ error: error.message })
+    }
+   
 }
 //////////////////////hết//////////////////////
